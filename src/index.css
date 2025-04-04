@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --color-primary: #8B4513;
+  --color-secondary: #D2691E;
+  --color-accent: #DEB887;
+  --color-background: #2C1810;
+  --color-surface: #3D261C;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-background);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.calendar-day:not(:disabled):hover {
+  background-color: var(--color-secondary);
+  transform: scale(1.1);
+}
+
+.form-input {
+  @apply w-full p-3 rounded-lg bg-opacity-20 border border-opacity-30 focus:border-opacity-100 focus:outline-none transition-all duration-200;
+  background-color: var(--color-surface);
+  border-color: var(--color-accent);
+}
+
+.form-input:focus {
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 2px rgba(210, 105, 30, 0.2);
+}
+
+.btn-primary {
+  @apply py-3 px-6 rounded-lg font-medium transition-all duration-200;
+  background-color: var(--color-primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-secondary);
+  transform: translateY(-1px);
+}
+
+.card {
+  @apply rounded-xl p-6;
+  background-color: var(--color-surface);
+  border: 1px solid rgba(222, 184, 135, 0.1);
+}
