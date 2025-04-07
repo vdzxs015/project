@@ -38,6 +38,8 @@ function App() {
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedTime, setSelectedTime] = useState<string>(''); // Novo estado para o horário
+  const [availableTimes, setAvailableTimes] = useState<Record<string, string[]>>({});
 
   const months = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -47,6 +49,32 @@ function App() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    // Inicialize os horários disponíveis para todos os dias do mês, exceto segundas, domingos e dias passados
+    const initializeAvailableTimes = () => {
+      const today = new Date();
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const newAvailableTimes: Record<string, string[]> = {};
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
+        const dateString = date.toISOString().split('T')[0];
+
+        // Exclua segundas (1), domingos (0) e dias passados
+        if (dayOfWeek !== 0 && dayOfWeek !== 1 && date >= today) {
+          newAvailableTimes[dateString] = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
+        }
+      }
+
+      setAvailableTimes(newAvailableTimes);
+    };
+
+    initializeAvailableTimes();
+  }, [selectedDate]);
 
   const fetchData = async () => {
     try {
@@ -82,37 +110,64 @@ function App() {
   };
 
   const handlePrevMonth = () => {
-    setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1));
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    if (
+      selectedDate.getFullYear() > currentYear ||
+      (selectedDate.getFullYear() === currentYear && selectedDate.getMonth() > currentMonth)
+    ) {
+      setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1));
+    }
   };
 
   const handleNextMonth = () => {
     setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1));
   };
 
+  const isPrevMonthDisabled = () => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    return (
+      selectedDate.getFullYear() < currentYear ||
+      (selectedDate.getFullYear() === currentYear && selectedDate.getMonth() <= currentMonth)
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
+      const selectedDateString = selectedDate.toISOString().split('T')[0];
+
       const { error } = await supabase
         .from('appointments')
         .insert({
-          date: selectedDate.toISOString().split('T')[0],
-          time: '10:00',
+          date: selectedDateString,
+          time: selectedTime,
           client_name: clientName,
           phone,
           service_id: selectedService,
-          professional_id: selectedProfessional
+          professional_id: selectedProfessional,
         });
 
       if (error) throw error;
-      
+
+      // Atualize os horários disponíveis para o dia selecionado
+      setAvailableTimes((prev) => ({
+        ...prev,
+        [selectedDateString]: prev[selectedDateString]?.filter((time) => time !== selectedTime) || [],
+      }));
+
       // Reset form
       setClientName('');
       setPhone('');
       setSelectedService(0);
       setSelectedProfessional(0);
-      
+      setSelectedTime('');
+
       toast.success('Agendamento realizado com sucesso!', {
         duration: 4000,
         position: 'top-center',
@@ -183,7 +238,10 @@ function App() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePrevMonth}
-                    className="p-2 rounded-lg hover:bg-accent/10 transition-colors"
+                    disabled={isPrevMonthDisabled()}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isPrevMonthDisabled() ? 'cursor-not-allowed text-accent/30' : 'hover:bg-accent/10'
+                    }`}
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -213,17 +271,18 @@ function App() {
                   const isToday = date.toDateString() === new Date().toDateString();
                   const isSunday = date.getDay() === 0;
                   const isMonday = date.getDay() === 1;
+                  const isPast = date < new Date();
                   
                   return (
                     <button
                       key={index}
-                      onClick={() => !isSunday && !isMonday && setSelectedDate(date)}
-                      disabled={isSunday || isMonday}
+                      onClick={() => !isSunday && !isMonday && !isPast && setSelectedDate(date)}
+                      disabled={isSunday || isMonday || isPast}
                       className={`
                         calendar-day text-sm font-medium rounded-lg
                         ${isSelected ? 'bg-secondary text-white' : ''}
                         ${isToday ? 'border-2 border-accent' : ''}
-                        ${(isSunday || isMonday) ? 'text-accent/30 cursor-not-allowed' : 'hover:bg-accent/10'}
+                        ${(isSunday || isMonday || isPast) ? 'text-accent/30 cursor-not-allowed' : 'hover:bg-accent/10'}
                       `}
                     >
                       {date.getDate()}
@@ -304,6 +363,24 @@ function App() {
                     placeholder="(00) 00000-0000"
                     disabled={isSubmitting}
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Horário</label>
+                  <select
+                    value={selectedTime}
+                    onChange={(e) => setSelectedTime(e.target.value)}
+                    required
+                    className="form-input"
+                    disabled={isSubmitting}
+                  >
+                    <option value="">Selecione um horário</option>
+                    {availableTimes[selectedDate.toISOString().split('T')[0]]?.map((time) => (
+                      <option key={time} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <button
