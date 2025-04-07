@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Scissors, User, Phone, MapPin, Mail, Calendar, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Calendar as Clock, Scissors, User, Phone, MapPin, Mail, Calendar, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { supabase } from './lib/supabase';
 
@@ -18,19 +18,18 @@ type Professional = {
   specialties: string[];
 };
 
-type Appointment = {
-  id: string;
-  date: Date;
-  time: string;
-  client_name: string;
-  phone: string;
-  service_id: number;
-  professional_id: number;
-};
+// type Appointment = {
+//   id: string; // ID único do agendamento
+//   date: string; // Data do agendamento (ajustado para string)
+//   time: string; // Hora do agendamento
+//   client_name: string; // Nome do cliente
+//   phone: string; // Telefone do cliente
+//   service_id: number; // ID do serviço
+//   professional_id: number; // ID do profissional
+// };
 
 function App() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [selectedService, setSelectedService] = useState<number>(0);
