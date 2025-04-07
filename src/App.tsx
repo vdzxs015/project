@@ -46,6 +46,7 @@ function App() {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
+  
   useEffect(() => {
     fetchData();
   }, []);
